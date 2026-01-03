@@ -1,0 +1,186 @@
+# AI-Assisted Insights Agent Configuration - Streaming Services 2025
+
+# Server settings
+server:
+  name: ai-insights-agent-streaming
+  version: 0.1.0
+  debug: false
+
+# Storage configuration
+storage:
+  type: sqlite
+  path: streaming_insights.db
+
+# Streaming Services Metrics (2025 Data)
+metrics:
+  total_subscribers:
+    name: Total Subscribers
+    description: Total number of active subscribers across all platforms
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.subscriptions
+    filter: status = 'active'
+    unit: subscribers
+    
+  new_subscribers:
+    name: New Subscribers
+    description: Count of new subscription signups in the time period
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.subscriptions
+    filter: ""
+    unit: subscribers
+    
+  monthly_revenue:
+    name: Monthly Recurring Revenue (MRR)
+    description: Total monthly recurring revenue from active subscriptions
+    sql_template: SUM(amount)
+    table: analytics.revenue
+    filter: payment_type = 'subscription'
+    unit: dollars
+    
+  average_revenue_per_user:
+    name: ARPU (Average Revenue Per User)
+    description: Average monthly revenue per active subscriber
+    sql_template: AVG(amount)
+    table: analytics.revenue
+    filter: payment_type = 'subscription'
+    unit: dollars
+    
+  churn_rate:
+    name: Churn Rate
+    description: Percentage of subscribers who cancelled in the time period
+    sql_template: COUNT(DISTINCT user_id) * 100.0 / (SELECT COUNT(DISTINCT user_id) FROM analytics.subscriptions WHERE status = 'active')
+    table: analytics.churn_events
+    filter: ""
+    unit: percent
+    
+  engagement_rate:
+    name: User Engagement Rate
+    description: Percentage of subscribers who watched content in the period
+    sql_template: COUNT(DISTINCT user_id) * 100.0 / (SELECT COUNT(DISTINCT user_id) FROM analytics.subscriptions WHERE status = 'active')
+    table: analytics.viewing_activity
+    filter: ""
+    unit: percent
+    
+  average_watch_time:
+    name: Average Watch Time
+    description: Average viewing duration per active user
+    sql_template: AVG(watch_duration_minutes)
+    table: analytics.viewing_activity
+    filter: ""
+    unit: minutes
+    
+  content_completion_rate:
+    name: Content Completion Rate
+    description: Percentage of started content that was completed
+    sql_template: COUNT(CASE WHEN completed = true THEN 1 END) * 100.0 / COUNT(*)
+    table: analytics.viewing_activity
+    filter: ""
+    unit: percent
+    
+  subscriber_lifetime_value:
+    name: Customer Lifetime Value (LTV)
+    description: Average total revenue per subscriber over their lifetime
+    sql_template: AVG(subscription_length_days * monthly_price / 30)
+    table: analytics.churn_events
+    filter: ""
+    unit: dollars
+    
+  platform_market_share:
+    name: Platform Market Share
+    description: Distribution of subscribers across platforms
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.subscriptions
+    filter: status = 'active'
+    unit: subscribers
+    
+  premium_adoption_rate:
+    name: Premium Plan Adoption
+    description: Percentage of subscribers on premium/highest tier plans
+    sql_template: COUNT(CASE WHEN plan_type LIKE '%Premium%' THEN 1 END) * 100.0 / COUNT(*)
+    table: analytics.subscriptions
+    filter: status = 'active'
+    unit: percent
+
+# Data source - sample streaming data
+data_sources:
+  streaming_demo:
+    type: csv
+    path: data/sample_data.csv
+    description: Sample 2025 streaming services data
+
+# Business glossary for streaming industry
+business_glossary:
+  users: subscribers
+  customers: subscribers
+  cancellations: churn_events
+  viewership: viewing_activity
+  content: content_library
+  watching: viewing_activity
+  streaming: viewing_activity
+  movies: content_library
+  shows: content_library
+  series: content_library
+  
+# Streaming-specific terms
+  netflix: platform
+  disney: platform
+  hulu: platform
+  max: platform
+  apple: platform
+  paramount: platform
+  peacock: platform
+  
+# Metrics terminology
+  retention: churn_rate
+  engagement: engagement_rate
+  watch_time: average_watch_time
+  viewing_hours: average_watch_time
+  revenue: monthly_revenue
+  subscribers: total_subscribers
+  signups: new_subscribers
+
+# Query optimization settings
+query:
+  max_results: 50000
+  timeout_seconds: 30
+  enable_caching: true
+  cache_ttl_seconds: 300
+
+# Data quality settings
+data_quality:
+  freshness_threshold_hours: 24
+  completeness_threshold_percent: 95
+  anomaly_detection:
+    enabled: true
+    sigma_threshold: 2.0
+
+# Streaming-specific analysis settings
+streaming_analysis:
+  platforms:
+    - Netflix
+    - Disney+
+    - Max
+    - AppleTV+
+    - Paramount+
+    - Peacock
+    - Hulu
+  
+  plan_tiers:
+    - Basic
+    - Standard
+    - Premium
+    - Family
+    
+  content_types:
+    - Movie
+    - Series
+    - Documentary
+    - Sports
+    - Kids
+    
+  key_markets:
+    - USA
+    - Canada
+    - UK
+    - Australia
+    - Germany
