@@ -876,6 +876,77 @@ def _analyze_correlation(metric1: str, metric2: str) -> str:
     return "Strong positive correlation (r=0.85) - these metrics tend to move together"
 
 
+# MCP Resources
+
+@mcp.resource("metrics://catalog")
+def get_metrics_catalog() -> str:
+    """
+    Expose the complete metrics catalog as an MCP resource.
+    
+    Returns the full list of available metrics with their definitions,
+    making it easy for LLMs to understand what data is available.
+    """
+    catalog = {
+        "catalog_name": "AI Insights Agent Metrics",
+        "version": "0.1.0",
+        "last_updated": datetime.now().isoformat(),
+        "metrics": METRIC_DEFINITIONS,
+        "business_glossary": BUSINESS_GLOSSARY
+    }
+    return json.dumps(catalog, indent=2)
+
+
+@mcp.resource("metrics://metric/{metric_id}")
+def get_metric_definition(metric_id: str) -> str:
+    """
+    Get detailed information about a specific metric.
+    
+    Args:
+        metric_id: The metric identifier
+        
+    Returns:
+        JSON string with metric definition
+    """
+    if metric_id not in METRIC_DEFINITIONS:
+        return json.dumps({"error": f"Metric '{metric_id}' not found"})
+    
+    metric = METRIC_DEFINITIONS[metric_id]
+    return json.dumps({
+        "metric_id": metric_id,
+        "definition": metric,
+        "sample_query": f"SELECT {metric['sql_template']}\nFROM {metric['table']}\nWHERE {metric['filter']}" if metric['filter'] else f"SELECT {metric['sql_template']}\nFROM {metric['table']}"
+    }, indent=2)
+
+
+@mcp.resource("history://recent")
+def get_recent_queries() -> str:
+    """
+    Get recent query history as an MCP resource.
+    
+    Returns:
+        JSON string with recent query history
+    """
+    recent = QUERY_HISTORY[-10:] if QUERY_HISTORY else []
+    return json.dumps({
+        "count": len(recent),
+        "queries": recent
+    }, indent=2)
+
+
+@mcp.resource("templates://list")
+def get_all_templates() -> str:
+    """
+    Get all saved query templates as an MCP resource.
+    
+    Returns:
+        JSON string with all templates
+    """
+    return json.dumps({
+        "count": len(QUERY_TEMPLATES),
+        "templates": QUERY_TEMPLATES
+    }, indent=2)
+
+
 @mcp.prompt()
 def insights_query_guide() -> str:
     """

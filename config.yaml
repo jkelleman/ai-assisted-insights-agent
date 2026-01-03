@@ -1,0 +1,111 @@
+# AI-Assisted Insights Agent Configuration
+
+# Server settings
+server:
+  name: ai-insights-agent
+  version: 0.1.0
+  debug: false
+
+# Storage configuration
+storage:
+  type: sqlite
+  path: insights_agent.db
+  # For PostgreSQL:
+  # type: postgresql
+  # host: localhost
+  # port: 5432
+  # database: insights_agent
+  # user: your_user
+  # password: your_password
+
+# Custom metric definitions
+metrics:
+  active_users:
+    name: Active Users
+    description: Unique users who logged in at least once in the time period
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.user_events
+    filter: event_type = 'login'
+    unit: users
+    
+  revenue:
+    name: Total Revenue
+    description: Sum of all completed transaction amounts
+    sql_template: SUM(amount)
+    table: analytics.transactions
+    filter: status = 'completed'
+    unit: dollars
+    
+  conversion_rate:
+    name: Conversion Rate
+    description: Percentage of visitors who completed a purchase
+    sql_template: COUNT(DISTINCT CASE WHEN purchased = true THEN user_id END) * 100.0 / COUNT(DISTINCT user_id)
+    table: analytics.user_sessions
+    filter: ""
+    unit: percent
+    
+  signups:
+    name: New Signups
+    description: Count of new user registrations
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.signups
+    filter: ""
+    unit: users
+  
+  # Add your custom metrics here:
+  # custom_metric:
+  #   name: Your Custom Metric
+  #   description: Description of what this measures
+  #   sql_template: Your SQL aggregation (e.g., SUM(column))
+  #   table: your_schema.your_table
+  #   filter: Optional WHERE clause filter
+  #   unit: The unit of measurement
+
+# Data source configurations
+data_sources:
+  default:
+    type: simulated
+    description: Simulated data for demo purposes
+  
+  # Example PostgreSQL configuration:
+  # production:
+  #   type: postgresql
+  #   host: db.example.com
+  #   port: 5432
+  #   database: analytics
+  #   schema: public
+  #   connection_params:
+  #     sslmode: require
+  
+  # Example BigQuery configuration:
+  # bigquery:
+  #   type: bigquery
+  #   project_id: your-project-id
+  #   dataset: analytics
+  #   credentials_path: /path/to/credentials.json
+
+# Business glossary - map business terms to technical terms
+business_glossary:
+  customers: users
+  purchases: transactions
+  sales: revenue
+  registrations: signups
+  conversions: conversion_rate
+  
+  # Add your organization's business terms:
+  # business_term: technical_term
+
+# Query optimization settings
+query:
+  max_results: 10000
+  timeout_seconds: 30
+  enable_caching: true
+  cache_ttl_seconds: 300
+
+# Data quality settings
+data_quality:
+  freshness_threshold_hours: 24
+  completeness_threshold_percent: 95
+  anomaly_detection:
+    enabled: true
+    sigma_threshold: 2.0

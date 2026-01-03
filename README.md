@@ -2,6 +2,25 @@
 
 **An MCP agent that translates natural language questions into accurate, explainable, and reproducible data insights.**
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## 📖 Table of Contents
+
+- [Overview](#overview)
+- [The Problem](#the-problem)
+- [The Solution](#the-solution)
+- [Key Features](#key-features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Examples](#examples)
+- [Architecture](#architecture)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+
 ## Overview
 
 The AI-Assisted Insights Agent bridges the gap between business questions and data answers. Analysts and product teams spend hours translating stakeholder questions into SQL queries, validating results, and explaining findings. This agent automates that workflow while maintaining transparency and reproducibility.
@@ -49,7 +68,7 @@ This agent provides natural language query translation with built-in explainabil
 
 ## Key Features
 
-### Natural Language Query Processing
+### 🤖 Natural Language Query Processing
 Convert business questions to validated SQL queries:
 ```
 "How many active users did we have last week?"
@@ -60,25 +79,287 @@ WHERE event_type = 'login'
   AND event_date >= CURRENT_DATE - INTERVAL '7 days'
 ```
 
-### Explainable Results
+### 📊 Explainable Results
 Every answer includes:
 - **The Query** - Exact SQL that generated the result
 - **Metric Definitions** - Which trusted metrics were used
 - **Data Quality** - Freshness, completeness, known issues
 - **Assumptions** - Time ranges, filters, exclusions applied
 
-### Intelligent Context
+### 🧠 Intelligent Context
 - Understands business terminology from metric definitions
 - Suggests relevant follow-up questions
 - Detects ambiguous queries and asks for clarification
 - Learns from query history and patterns
 
-### Integration with Semantic Layer
+### 🔗 Integration with Semantic Layer
 Works seamlessly with semantic metrics:
 - Pulls metric definitions from semantic layer
 - Ensures consistent business logic across queries
 - Validates queries against approved metrics
 - Maintains governance and trust standards
+
+## Installation
+
+### Prerequisites
+
+- Python 3.10 or higher
+- pip or uv package manager
+
+### Option 1: Install from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/jkelleman/ai-assisted-insights-agent.git
+cd ai-assisted-insights-agent
+
+# Install with pip
+pip install -e .
+
+# Or install with uv (recommended)
+uv pip install -e .
+```
+
+### Option 2: Install as Package
+
+```bash
+pip install git+https://github.com/jkelleman/ai-assisted-insights-agent.git
+```
+
+### Verify Installation
+
+```bash
+# Test the CLI
+python -m insights_agent.cli
+
+# Or run tests
+pytest tests/
+```
+
+## Quick Start
+
+### 1. Configure the Agent
+
+Create or edit `config.yaml`:
+
+```yaml
+metrics:
+  active_users:
+    name: Active Users
+    description: Unique users who logged in
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.user_events
+    filter: event_type = 'login'
+    unit: users
+
+business_glossary:
+  customers: users
+  purchases: transactions
+```
+
+### 2. Start the MCP Server
+
+```bash
+python -m insights_agent.server
+```
+
+### 3. Use with Claude Desktop
+
+#### Windows
+Edit `%APPDATA%\Claude\claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "insights-agent": {
+      "command": "python",
+      "args": ["-m", "insights_agent.server"],
+      "cwd": "C:\\path\\to\\ai-assisted-insights-agent"
+    }
+  }
+}
+```
+
+#### macOS/Linux
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "insights-agent": {
+      "command": "python3",
+      "args": ["-m", "insights_agent.server"],
+      "cwd": "/path/to/ai-assisted-insights-agent"
+    }
+  }
+}
+```
+
+Restart Claude Desktop and start asking data questions!
+
+### 4. Use the Interactive CLI
+
+```bash
+python -m insights_agent.cli
+
+# In the CLI:
+insights> ask How many active users did we have last week?
+insights> generate revenue "last 30 days"
+insights> compare active_users revenue "last month"
+```
+
+## Usage
+
+### MCP Tools
+
+The agent exposes 9 tools via MCP:
+
+#### ask_question
+Ask questions in natural language:
+```python
+ask_question("How many users signed up last month?")
+```
+
+#### generate_query
+Generate SQL for specific metrics:
+```python
+generate_query("revenue", "last 30 days", "country='US'", "date")
+```
+
+#### validate_query
+Validate SQL queries:
+```python
+validate_query("SELECT COUNT(*) FROM users WHERE date >= '2025-01-01'")
+```
+
+#### explain_result
+Get context and interpretation:
+```python
+explain_result("1500", "active_users", "last 7 days")
+```
+
+#### suggest_followups
+Get follow-up question suggestions:
+```python
+suggest_followups("How many active users last week?")
+```
+
+#### save_query_template
+Save reusable query templates:
+```python
+save_query_template("Weekly Users", "SELECT COUNT(*) FROM users", "Weekly count")
+```
+
+#### list_templates
+View saved templates:
+```python
+list_templates()
+```
+
+#### check_data_quality
+Assess data quality:
+```python
+check_data_quality("revenue", "last 7 days")
+```
+
+#### compare_metrics
+Compare two metrics:
+```python
+compare_metrics("active_users", "revenue", "last month")
+```
+
+### MCP Resources
+
+Access data via resources:
+
+- `metrics://catalog` - Complete metrics catalog
+- `metrics://metric/{id}` - Specific metric definition
+- `history://recent` - Recent query history
+- `templates://list` - Saved query templates
+
+### Python API
+
+Use directly in Python code:
+
+```python
+from insights_agent.server import ask_question, generate_query
+
+# Ask a question
+result = ask_question("How many active users last week?")
+print(result)
+
+# Generate a query
+query = generate_query("revenue", "last 30 days", "country='US'")
+print(query)
+```
+
+See [examples/python-client](examples/python-client) for more examples.
+
+## Configuration
+
+### Metric Definitions
+
+Define custom metrics in `config.yaml`:
+
+```yaml
+metrics:
+  your_metric:
+    name: Your Metric Name
+    description: What this metric measures
+    sql_template: COUNT(*) or SUM(column) or other aggregation
+    table: schema.table_name
+    filter: Optional WHERE clause conditions
+    unit: users, dollars, percent, etc.
+```
+
+### Data Sources
+
+Configure data sources:
+
+```yaml
+data_sources:
+  production:
+    type: postgresql
+    host: db.example.com
+    port: 5432
+    database: analytics
+    # Use environment variables for credentials
+```
+
+### Business Glossary
+
+Map business terms:
+
+```yaml
+business_glossary:
+  customers: users
+  purchases: transactions
+  sales: revenue
+```
+
+### Query Settings
+
+Tune performance:
+
+```yaml
+query:
+  max_results: 10000
+  timeout_seconds: 30
+  enable_caching: true
+  cache_ttl_seconds: 300
+```
+
+## Examples
+
+### Claude Desktop Integration
+See [examples/claude-desktop](examples/claude-desktop)
+
+### Python Client
+See [examples/python-client](examples/python-client)
+
+### Jupyter Notebook
+See [examples/jupyter](examples/jupyter)
+
+### Complete Usage Guide
+See [examples/USAGE.md](examples/USAGE.md)
 
 ## Architecture
 
