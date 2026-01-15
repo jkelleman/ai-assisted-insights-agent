@@ -606,3 +606,4 @@ I design AI and data experiences that reduce cognitive load and build trust thro
 ---
 
 **Making data insights accessible, explainable, and trustworthy.**
+
