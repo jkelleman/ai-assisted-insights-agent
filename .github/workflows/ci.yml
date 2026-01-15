@@ -31,7 +31,7 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest tests/ -v --tb=short
+        pytest 05_tests/ -v --tb=short
 
   lint:
     runs-on: ubuntu-latest

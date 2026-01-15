@@ -105,7 +105,7 @@ metrics:
 data_sources:
   streaming_demo:
     type: csv
-    path: data/sample_data.csv
+    path: 03_data/sample_data.csv
     description: Sample 2025 streaming services data
 
 # Business glossary for streaming industry

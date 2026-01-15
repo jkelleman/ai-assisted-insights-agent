@@ -134,7 +134,7 @@ pip install git+https://github.com/jkelleman/ai-assisted-insights-agent.git
 python -m insights_agent.cli
 
 # Or run tests
-pytest tests/
+pytest 05_tests/
 ```
 
 ## Quick Start
@@ -292,7 +292,7 @@ query = generate_query("revenue", "last 30 days", "country='US'")
 print(query)
 ```
 
-See [examples/python-client](examples/python-client) for more examples.
+See [02_examples/python-client](02_examples/python-client) for more examples.
 
 ## Configuration
 
@@ -351,16 +351,16 @@ query:
 ## Examples
 
 ### Claude Desktop Integration
-See [examples/claude-desktop](examples/claude-desktop)
+See [02_examples/claude-desktop](02_examples/claude-desktop)
 
 ### Python Client
-See [examples/python-client](examples/python-client)
+See [02_examples/python-client](02_examples/python-client)
 
 ### Jupyter Notebook
-See [examples/jupyter](examples/jupyter)
+See [02_examples/jupyter](02_examples/jupyter)
 
 ### Complete Usage Guide
-See [examples/USAGE.md](examples/USAGE.md)
+See [02_examples/USAGE.md](02_examples/USAGE.md)
 
 ## Architecture
 

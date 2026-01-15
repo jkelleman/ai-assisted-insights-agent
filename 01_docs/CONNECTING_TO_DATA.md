@@ -584,12 +584,12 @@ class CSVConnector:
 import pandas as pd
 
 # Read CSV
-df = pd.read_csv('data/customers.csv')
+df = pd.read_csv('03_data/customers.csv')
 print(df.head())
 print(f"Total rows: {len(df)}")
 
 # Read Excel
-df_excel = pd.read_excel('data/products.xlsx')
+df_excel = pd.read_excel('03_data/products.xlsx')
 print(df_excel.head())
 ```
 
@@ -1144,7 +1144,7 @@ Once connected:
 **Need more help?**
 - Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 - Review [API.md](API.md) for function reference
-- See [examples/](../examples/) for code samples
+- See [02_examples/](../02_examples/) for code samples
 
 ---
 

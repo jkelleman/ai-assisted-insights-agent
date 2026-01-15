@@ -20,19 +20,19 @@ storage:
 data_sources:
   paid_services:
     type: csv
-    path: data/paid_video_streaming_services.csv
+    path: 03_data/paid_video_streaming_services.csv
     
   free_services:
     type: csv
-    path: data/free_video_streaming_services.csv
+    path: 03_data/free_video_streaming_services.csv
     
   market_summary:
     type: csv
-    path: data/paid_video_market_summary.csv
+    path: 03_data/paid_video_market_summary.csv
     
   growth_predictions:
     type: csv
-    path: data/paid_video_growth_predictions.csv
+    path: 03_data/paid_video_growth_predictions.csv
 
 # Metrics based on actual Kaggle dataset columns
 metrics:

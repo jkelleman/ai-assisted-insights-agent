@@ -6,7 +6,7 @@ Your AI-Assisted Insights Agent can connect to **real global streaming services 
 
 ## ⚠️ Prerequisites: Download the Dataset
 
-Before using `config_kaggle.yaml`, you must download the Kaggle dataset:
+Before using `06_configs/config_kaggle.yaml`, you must download the Kaggle dataset:
 
 ### Option 1: Using Kaggle CLI (Recommended)
 
@@ -14,22 +14,22 @@ Before using `config_kaggle.yaml`, you must download the Kaggle dataset:
 # Install kaggle CLI if needed
 pip install kaggle
 
-# Download and extract to data/ folder
+# Download and extract to 03_data/ folder
 kaggle datasets download -d sureshkumarpalus/global-streaming-services-dataset
-unzip global-streaming-services-dataset.zip -d data/
+unzip global-streaming-services-dataset.zip -d 03_data/
 ```
 
 ### Option 2: Manual Download
 
 1. Visit: https://www.kaggle.com/datasets/sureshkumarpalus/global-streaming-services-dataset
 2. Click "Download" (requires free Kaggle account)
-3. Extract the ZIP contents to the `data/` folder
+3. Extract the ZIP contents to the `03_data/` folder
 
 ### Verify Installation
 
-After downloading, your `data/` folder should contain:
+After downloading, your `03_data/` folder should contain:
 ```
-data/
+03_data/
 ├── paid_video_streaming_services.csv
 ├── free_video_streaming_services.csv
 ├── paid_video_market_summary.csv
@@ -371,7 +371,7 @@ data/
 ```powershell
 # Start the CLI
 cd /path/to/ai-assisted-insights-agent
-$env:CONFIG_PATH = "config_kaggle.yaml"
+$env:06_configs/config_PATH = "06_configs/config_kaggle.yaml"
 python -m insights_agent.cli
 
 # Then ask questions
@@ -386,7 +386,7 @@ python -m insights_agent.cli
 import pandas as pd
 
 # Load the data
-df = pd.read_csv("data/paid_video_streaming_services.csv")
+df = pd.read_csv("03_data/paid_video_streaming_services.csv")
 
 # Query 1: Top services
 top10 = df.nlargest(10, "subscribers_millions")
@@ -406,7 +406,7 @@ print(growth.nlargest(10, "yoy_growth"))
 
 ### Method 3: Direct Data Access
 
-All data files are in `data/` directory:
+All data files are in `03_data/` directory:
 - `paid_video_streaming_services.csv`
 - `free_video_streaming_services.csv`
 - `paid_video_market_summary.csv`
@@ -465,7 +465,7 @@ Open with Excel, Power BI, Tableau, or any data tool.
 ### 1. Growth Cohort Analysis
 
 ```python
-df = pd.read_csv("data/paid_video_streaming_services.csv")
+df = pd.read_csv("03_data/paid_video_streaming_services.csv")
 
 # Define cohorts by launch year
 df["cohort"] = pd.cut(df["launch_year"], 
@@ -558,7 +558,7 @@ python query_real_data.py
 
 ### 2. Use the Interactive CLI
 ```powershell
-$env:CONFIG_PATH = "config_kaggle.yaml"
+$env:06_configs/config_PATH = "06_configs/config_kaggle.yaml"
 python -m insights_agent.cli
 ```
 
