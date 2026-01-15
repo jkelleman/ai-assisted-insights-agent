@@ -1,6 +1,40 @@
 # Real Streaming Data Analysis Guide
 
-Your AI-Assisted Insights Agent is now connected to **real global streaming services data** from Kaggle with 113 platforms and 2+ billion subscribers.
+Your AI-Assisted Insights Agent can connect to **real global streaming services data** from Kaggle with 113 platforms and 2+ billion subscribers.
+
+---
+
+## ⚠️ Prerequisites: Download the Dataset
+
+Before using `config_kaggle.yaml`, you must download the Kaggle dataset:
+
+### Option 1: Using Kaggle CLI (Recommended)
+
+```bash
+# Install kaggle CLI if needed
+pip install kaggle
+
+# Download and extract to data/ folder
+kaggle datasets download -d sureshkumarpalus/global-streaming-services-dataset
+unzip global-streaming-services-dataset.zip -d data/
+```
+
+### Option 2: Manual Download
+
+1. Visit: https://www.kaggle.com/datasets/sureshkumarpalus/global-streaming-services-dataset
+2. Click "Download" (requires free Kaggle account)
+3. Extract the ZIP contents to the `data/` folder
+
+### Verify Installation
+
+After downloading, your `data/` folder should contain:
+```
+data/
+├── paid_video_streaming_services.csv
+├── free_video_streaming_services.csv
+├── paid_video_market_summary.csv
+└── paid_video_growth_predictions.csv
+```
 
 ---
 
@@ -336,7 +370,7 @@ Your AI-Assisted Insights Agent is now connected to **real global streaming serv
 
 ```powershell
 # Start the CLI
-cd C:\Users\jenkelleman\Projects\ai-assisted-insights-agent
+cd /path/to/ai-assisted-insights-agent
 $env:CONFIG_PATH = "config_kaggle.yaml"
 python -m insights_agent.cli
 

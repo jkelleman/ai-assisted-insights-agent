@@ -3,7 +3,7 @@ name = "ai-insights-agent"
 version = "0.1.0"
 description = "MCP agent that translates natural language questions into accurate, explainable, and reproducible data insights"
 authors = [
-    {name = "Jen Kelleman", email = "jenkelleman@microsoft.com"}
+    {name = "Jen Kelleman"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"

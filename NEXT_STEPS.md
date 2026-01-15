@@ -24,7 +24,7 @@ Documentation complete
        "ai-insights-agent": {
          "command": "python",
          "args": ["-m", "insights_agent.server"],
-         "cwd": "C:\\Users\\jenkelleman\\Projects\\ai-assisted-insights-agent"
+         "cwd": "/path/to/ai-assisted-insights-agent"
        }
      }
    }

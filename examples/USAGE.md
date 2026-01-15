@@ -269,7 +269,3 @@ uv pip install -e .
 3. **Compare Against Baselines** - Always provide historical context
 4. **Validate Before Executing** - Use validate_query() on complex queries
 5. **Document Assumptions** - Use explain_result() to surface limitations
-
----
-
-For questions or feedback: jenkelleman@microsoft.com

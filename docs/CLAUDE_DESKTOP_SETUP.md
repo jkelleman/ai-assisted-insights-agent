@@ -158,19 +158,19 @@ Run both regular and streaming versions:
 
 **Use double backslashes:**
 ```json
-"cwd": "C:\\Users\\jenkelleman\\ai-assisted-insights-agent"
+"cwd": "C:\\Users\\YourUsername\\ai-assisted-insights-agent"
 ```
 
 **Or forward slashes:**
 ```json
-"cwd": "C:/Users/jenkelleman/ai-assisted-insights-agent"
+"cwd": "C:/Users/YourUsername/ai-assisted-insights-agent"
 ```
 
 ### macOS/Linux Paths
 
 **Use forward slashes:**
 ```json
-"cwd": "/Users/jenkelleman/ai-assisted-insights-agent"
+"cwd": "/Users/YourUsername/ai-assisted-insights-agent"
 ```
 
 **With home directory shortcut:**
@@ -193,10 +193,10 @@ Here's a full working configuration for **Windows**:
         "-m",
         "insights_agent.server"
       ],
-      "cwd": "C:\\Users\\jenkelleman\\ai-assisted-insights-agent",
+      "cwd": "C:\\Users\\YourUsername\\ai-assisted-insights-agent",
       "env": {
         "CONFIG_PATH": "config_streaming.yaml",
-        "PYTHONPATH": "C:\\Users\\jenkelleman\\ai-assisted-insights-agent"
+        "PYTHONPATH": "C:\\Users\\YourUsername\\ai-assisted-insights-agent"
       }
     }
   }
@@ -214,10 +214,10 @@ Here's a full working configuration for **Windows**:
         "-m",
         "insights_agent.server"
       ],
-      "cwd": "/Users/jenkelleman/ai-assisted-insights-agent",
+      "cwd": "/Users/YourUsername/ai-assisted-insights-agent",
       "env": {
         "CONFIG_PATH": "config_streaming.yaml",
-        "PYTHONPATH": "/Users/jenkelleman/ai-assisted-insights-agent"
+        "PYTHONPATH": "/Users/YourUsername/ai-assisted-insights-agent"
       }
     }
   }

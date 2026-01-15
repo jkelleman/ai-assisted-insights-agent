@@ -1,4 +1,9 @@
 # AI-Assisted Insights Agent Configuration - Kaggle Streaming Data
+#
+# SETUP REQUIRED: Download the Kaggle dataset before using this config.
+# See REAL_DATA_GUIDE.md for instructions, or run:
+#   kaggle datasets download -d sureshkumarpalus/global-streaming-services-dataset
+#   unzip global-streaming-services-dataset.zip -d data/
 
 # Server settings
 server:

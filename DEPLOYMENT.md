@@ -21,7 +21,7 @@ All 43 tests passing, MCP server runs successfully.
         "-m",
         "insights_agent.server"
       ],
-      "cwd": "C:\\Users\\jenkelleman\\Projects\\ai-assisted-insights-agent",
+      "cwd": "/path/to/ai-assisted-insights-agent",
       "env": {
         "CONFIG_PATH": "config.yaml"
       }

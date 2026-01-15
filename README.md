@@ -2,9 +2,11 @@
 
 **An MCP agent that translates natural language questions into accurate, explainable, and reproducible data insights.**
 
+[![CI](https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ## 📖 Table of Contents
 
@@ -18,8 +20,7 @@
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [Architecture](#architecture)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
+- [About](#about)
 
 ## Overview
 
@@ -400,16 +401,14 @@ See [examples/USAGE.md](examples/USAGE.md)
 └─────────────────────────────────────────┘
 ```
 
-## Quick Start
-
-### Installation
+## Alternative Installation (using uv)
 
 ```bash
 # Clone the repository
 git clone https://github.com/jkelleman/ai-assisted-insights-agent.git
 cd ai-assisted-insights-agent
 
-# Install dependencies
+# Install dependencies with uv
 uv add "mcp[cli]"
 uv pip install -e .
 
