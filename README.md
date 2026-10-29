@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-## 📖 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [The Problem](#the-problem)
@@ -69,7 +69,7 @@ This agent provides natural language query translation with built-in explainabil
 
 ## Key Features
 
-### 🤖 Natural Language Query Processing
+### Natural Language Query Processing
 Convert business questions to validated SQL queries:
 ```
 "How many active users did we have last week?"
@@ -80,20 +80,20 @@ WHERE event_type = 'login'
   AND event_date >= CURRENT_DATE - INTERVAL '7 days'
 ```
 
-### 📊 Explainable Results
+### Explainable Results
 Every answer includes:
 - **The Query** - Exact SQL that generated the result
 - **Metric Definitions** - Which trusted metrics were used
 - **Data Quality** - Freshness, completeness, known issues
 - **Assumptions** - Time ranges, filters, exclusions applied
 
-### 🧠 Intelligent Context
+### Intelligent Context
 - Understands business terminology from metric definitions
 - Suggests relevant follow-up questions
 - Detects ambiguous queries and asks for clarification
 - Learns from query history and patterns
 
-### 🔗 Integration with Semantic Layer
+### Integration with Semantic Layer
 Works seamlessly with semantic metrics:
 - Pulls metric definitions from semantic layer
 - Ensures consistent business logic across queries
