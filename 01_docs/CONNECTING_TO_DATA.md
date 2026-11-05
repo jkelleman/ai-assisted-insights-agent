@@ -1,5 +1,7 @@
 # Connecting to Your Real Data
 
+> **Status:** The data-connection layer isn't wired into the server yet. Today the agent generates SQL from the metric catalog in `insights_agent/server.py` and simulates execution. This guide documents the planned setup.
+
 Complete guide to connecting the AI-Assisted Insights Agent to your actual data sources.
 
 ---

@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  :root { --ink:#0F1B2D; --gray:#5B6675; --teal:#0F8B7E; --teal-soft:#DDF3EF; --line:#DCE3E8; --code:#0F1B2D; --amber:#B7791F; }
+  * { box-sizing:border-box; margin:0; }
+  body { width:1280px; height:420px; font-family:"Inter",sans-serif; color:var(--ink); background:#fff; overflow:hidden; }
+  .wrap { position:relative; width:100%; height:100%; display:grid; grid-template-columns:1fr 500px; gap:44px; padding:48px 64px; align-items:center;
+          background:
+            linear-gradient(#fff0, #fff0),
+            radial-gradient(760px 420px at 100% 0%, #E6F5F2 0%, #fff 62%); }
+  .wrap::before { content:""; position:absolute; inset:0; background-image:linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size:32px 32px; opacity:.35; mask-image:linear-gradient(90deg, transparent 0%, #000 60%); pointer-events:none; }
+  .wrap::after { content:""; position:absolute; left:0; right:0; bottom:0; height:6px; background:linear-gradient(90deg, #0F8B7E, #1F6FB2); }
+  .left, .card { position:relative; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:15px; font-weight:600; color:var(--teal); letter-spacing:.02em; }
+  .eyebrow i { width:8px; height:8px; border-radius:2px; background:var(--teal); }
+  h1 { font-family:"Inter Display","Inter",sans-serif; font-weight:800; font-size:52px; line-height:1.03; letter-spacing:-0.035em; margin-top:16px; }
+  h1 span { color:var(--teal); }
+  .sub { margin-top:16px; font-size:19px; line-height:1.45; color:var(--gray); max-width:600px; }
+  .chips { display:flex; gap:10px; margin-top:26px; flex-wrap:wrap; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:15px; font-weight:600; background:#fff; }
+  .chip b { color:var(--teal); font-weight:800; }
+
+  .card { background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:0 10px 30px rgba(15,27,45,.12); padding:18px; display:grid; gap:12px; }
+  .q { justify-self:end; background:var(--ink); color:#fff; border-radius:14px 14px 4px 14px; padding:10px 14px; font-size:15px; font-weight:500; }
+  .ans { display:flex; align-items:baseline; gap:10px; }
+  .ans strong { font-size:26px; font-weight:800; letter-spacing:-.02em; }
+  .ans span { font-size:13px; color:var(--amber); font-weight:600; background:#FDF3E1; border-radius:6px; padding:2px 8px; }
+  pre { margin:0; background:var(--code); color:#E6EDF3; border-radius:10px; padding:12px 14px; font:12.5px/1.5 "DejaVu Sans Mono", monospace; white-space:pre; overflow:hidden; }
+  .k { color:#7FD1C4; } .s { color:#F2C46D; } .lbl { display:block; color:#8B98A8; font-size:11px; font-family:"Inter",sans-serif; font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; }
+  .meta { display:flex; gap:8px; flex-wrap:wrap; }
+  .m { background:var(--teal-soft); color:#0B5F56; border-radius:8px; padding:5px 10px; font-size:12.5px; font-weight:600; }
+</style></head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <div class="eyebrow"><i></i>MCP agent · explainable analytics</div>
+    <h1>Every answer<br>shows its <span>work</span>.</h1>
+    <p class="sub">An MCP agent that turns plain-language data questions into SQL from trusted metric definitions, then explains the query, the metric, and the assumptions behind every number.</p>
+    <div class="chips">
+      <div class="chip"><b>9</b> MCP tools</div>
+      <div class="chip"><b>4</b> MCP resources</div>
+      <div class="chip"><b>43</b> tests</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="q">How many active users did we have last week?</div>
+    <div class="ans"><strong>1,896 users</strong><span>simulated value</span></div>
+<pre><span class="lbl">Query used</span><span class="k">SELECT</span> COUNT(DISTINCT user_id)
+<span class="k">FROM</span> analytics.user_events
+<span class="k">WHERE</span> event_type = <span class="s">'login'</span>
+  <span class="k">AND</span> event_date &gt;= CURRENT_DATE - <span class="k">INTERVAL</span> <span class="s">'7 days'</span></pre>
+    <div class="meta">
+      <div class="m">Metric: Active Users</div>
+      <div class="m">Filter: logins only</div>
+      <div class="m">4 follow-up questions</div>
+    </div>
+  </div>
+</div>
+</body></html>

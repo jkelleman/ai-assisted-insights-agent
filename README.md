@@ -1,192 +1,122 @@
+<p align="center"><img src="assets/banner.png" alt="Every answer shows its work: an MCP agent that turns plain-language data questions into SQL from trusted metric definitions. An example card shows the question 'How many active users did we have last week?', the generated SQL, and the metric and filter used." width="100%"></p>
+
 # AI-Assisted Insights Agent
 
-**An MCP agent that translates natural language questions into accurate, explainable, and reproducible data insights.**
+<p>
+  <a href="https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-0F1B2D?logo=python&logoColor=white">
+  <a href="https://modelcontextprotocol.io/"><img alt="MCP SDK 1.x" src="https://img.shields.io/badge/MCP%20SDK-1.x-0F8B7E"></a>
+  <img alt="9 MCP tools" src="https://img.shields.io/badge/MCP%20tools-9-0F8B7E">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0F1B2D"></a>
+</p>
 
-[![CI](https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/jkelleman/ai-assisted-insights-agent/actions/workflows/ci.yml)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+**An MCP agent that turns plain-language data questions into SQL from trusted metric definitions, and shows its work on every answer.**
 
-## Table of Contents
+Ask "How many active users did we have last week?" and the agent answers with the number, the exact SQL it ran, the metric definition behind it, the filters it assumed, and the questions worth asking next. It's built for stakeholders who need answers without writing SQL, and for analysts who need to trust those answers.
 
-- [Overview](#overview)
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
-- [Key Features](#key-features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Architecture](#architecture)
+> [!NOTE]
+> **Status: reference implementation.** Question parsing, SQL generation, query validation, templates, and history work today. Query execution and data-quality checks are **simulated**, and every answer says so. Connecting a real warehouse is next on the [roadmap](#roadmap).
+
+## Contents
+
+- [The problem](#the-problem)
+- [What an answer looks like](#what-an-answer-looks-like)
+- [MCP tools and resources](#mcp-tools-and-resources)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [Design principles](#design-principles)
+- [Project layout](#project-layout)
+- [Roadmap](#roadmap)
 - [About](#about)
 
-## Overview
+## The problem
 
-The AI-Assisted Insights Agent bridges the gap between business questions and data answers. Analysts and product teams spend hours translating stakeholder questions into SQL queries, validating results, and explaining findings. This agent automates that workflow while maintaining transparency and reproducibility.
+| Who | What goes wrong today |
+|---|---|
+| **Stakeholders** | They ask "why did revenue drop?" and wait days. When the answer arrives, they can't check how it was calculated. |
+| **Analysts** | They rewrite the same queries for routine questions and become the bottleneck. |
+| **Everyone** | "Active customers" means different things to different teams, so two dashboards disagree. |
 
-## The Problem
+This agent maps business language to one set of trusted metric definitions, then shows the work behind every number, so an answer can be checked instead of taken on faith.
 
-**Time-Intensive Translation**
-- Stakeholders ask: "Why did revenue drop last week?"
-- Analysts spend hours writing queries, joining tables, debugging logic
-- Results require extensive validation and explanation
-- Process must be repeated for similar questions
+## What an answer looks like
 
-**Accuracy and Trust Barriers**
-- Non-technical stakeholders can't verify query logic
-- Results lack context about data quality and limitations
-- Difficult to reproduce analysis with updated data
-- No audit trail for how insights were derived
+This is real output from `ask_question`. The number comes from the simulated execution layer.
 
-**Communication Friction**
-- Business language ("active customers") doesn't map cleanly to technical definitions
-- Analysts become bottlenecks for routine questions
-- Insights arrive too late to inform decisions
-- Tribal knowledge locked in analyst teams
+```text
+Question: How many active users did we have last week?
+Time Period: last 7 days
 
-## The Solution
+Answer: 1,896 users
+Note: Values are simulated until a data source is connected.
 
-This agent provides natural language query translation with built-in explainability and reproducibility:
+Query Used:
+SELECT COUNT(DISTINCT user_id)
+FROM analytics.user_events
+WHERE event_type = 'login' AND event_date >= CURRENT_DATE - INTERVAL '7 days'
 
-**Natural Language Interface**
-- Ask questions in plain English: "What's our conversion rate for trial users last month?"
-- Agent translates to SQL using trusted metric definitions
-- Automatic query optimization and validation
+Explanation:
+Metric logic: Unique users who logged in at least once in the time period, from the analytics.user_events table.
+Filtered by: event_type = 'login'
 
-**Explainability First**
-- Show the SQL query generated
-- Explain which tables and metrics were used
-- Surface data quality indicators (freshness, completeness)
-- Highlight assumptions and limitations
+Data Quality: (simulated checks)
+✓ Data is fresh (updated 2 hours ago)
+✓ No missing days in date range
+✓ Volume within expected range (within 2σ of baseline)
 
-**Reproducibility by Default**
-- Every insight includes the underlying query
-- Query templates can be saved and rerun
-- Version-controlled metric definitions ensure consistency
-- Audit trail for compliance and validation
+Metric Definition:
+• Name: Active Users
+• Description: Unique users who logged in at least once in the time period
+• Source: analytics.user_events
 
-## Key Features
-
-### Natural Language Query Processing
-Convert business questions to validated SQL queries:
-```
-"How many active users did we have last week?"
-↓
-SELECT COUNT(DISTINCT user_id) 
-FROM analytics.user_events 
-WHERE event_type = 'login' 
-  AND event_date >= CURRENT_DATE - INTERVAL '7 days'
+Suggested Follow-ups:
+• What was active users for the previous period?
+• Show me active users broken down by day
+• Compare active users to the same period last year
+• What's the conversion rate for these users?
 ```
 
-### Explainable Results
-Every answer includes:
-- **The Query** - Exact SQL that generated the result
-- **Metric Definitions** - Which trusted metrics were used
-- **Data Quality** - Freshness, completeness, known issues
-- **Assumptions** - Time ranges, filters, exclusions applied
+If a question doesn't match a known metric, the agent doesn't guess. It lists the metrics it knows and suggests how to rephrase.
 
-### Intelligent Context
-- Understands business terminology from metric definitions
-- Suggests relevant follow-up questions
-- Detects ambiguous queries and asks for clarification
-- Learns from query history and patterns
+## MCP tools and resources
 
-### Integration with Semantic Layer
-Works seamlessly with semantic metrics:
-- Pulls metric definitions from semantic layer
-- Ensures consistent business logic across queries
-- Validates queries against approved metrics
-- Maintains governance and trust standards
+| Tool | What it does |
+|---|---|
+| `ask_question` | Answers a plain-language question with the SQL, metric definition, and follow-ups |
+| `generate_query` | Builds SQL for a named metric, time period, filters, and grouping |
+| `validate_query` | Checks SQL for structural and performance problems before it runs |
+| `explain_result` | Puts a number in context against a baseline and flags notable changes |
+| `suggest_followups` | Suggests drill-down and related questions |
+| `check_data_quality` | Scores freshness, completeness, and anomalies *(simulated)* |
+| `compare_metrics` | Compares two metrics side by side with their definitions |
+| `save_query_template` | Saves a query so it can be rerun later |
+| `list_templates` | Lists saved templates |
 
-## Installation
+**Resources:** `metrics://catalog`, `metrics://metric/{id}`, `history://recent`, `templates://list`
+**Prompt:** `insights_query_guide`, a short guide to asking good data questions
 
-### Prerequisites
+Full reference: [01_docs/API.md](01_docs/API.md)
 
-- Python 3.10 or higher
-- pip or uv package manager
+## Quick start
 
-### Option 1: Install from Source
+**Requirements:** Python 3.10+
 
 ```bash
-# Clone the repository
 git clone https://github.com/jkelleman/ai-assisted-insights-agent.git
 cd ai-assisted-insights-agent
-
-# Install with pip
 pip install -e .
-
-# Or install with uv (recommended)
-uv pip install -e .
+pytest            # 43 tests
 ```
 
-### Option 2: Install as Package
+### Use it in Claude Desktop
 
-```bash
-pip install git+https://github.com/jkelleman/ai-assisted-insights-agent.git
-```
+Add the server to `claude_desktop_config.json`. On macOS it's in `~/Library/Application Support/Claude/`, and on Windows it's in `%APPDATA%\Claude\`.
 
-### Verify Installation
-
-```bash
-# Test the CLI
-python -m insights_agent.cli
-
-# Or run tests
-pytest 05_tests/
-```
-
-## Quick Start
-
-### 1. Configure the Agent
-
-Create or edit `config.yaml`:
-
-```yaml
-metrics:
-  active_users:
-    name: Active Users
-    description: Unique users who logged in
-    sql_template: COUNT(DISTINCT user_id)
-    table: analytics.user_events
-    filter: event_type = 'login'
-    unit: users
-
-business_glossary:
-  customers: users
-  purchases: transactions
-```
-
-### 2. Start the MCP Server
-
-```bash
-python -m insights_agent.server
-```
-
-### 3. Use with Claude Desktop
-
-#### Windows
-Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
     "insights-agent": {
       "command": "python",
-      "args": ["-m", "insights_agent.server"],
-      "cwd": "C:\\path\\to\\ai-assisted-insights-agent"
-    }
-  }
-}
-```
-
-#### macOS/Linux
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "insights-agent": {
-      "command": "python3",
       "args": ["-m", "insights_agent.server"],
       "cwd": "/path/to/ai-assisted-insights-agent"
     }
@@ -194,416 +124,78 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 }
 ```
 
-Restart Claude Desktop and start asking data questions!
+Restart Claude Desktop and ask a data question. Step-by-step setup: [01_docs/CLAUDE_DESKTOP_SETUP.md](01_docs/CLAUDE_DESKTOP_SETUP.md)
 
-### 4. Use the Interactive CLI
+### Or use the interactive CLI
 
-```bash
+```text
 python -m insights_agent.cli
 
-# In the CLI:
 insights> ask How many active users did we have last week?
 insights> generate revenue "last 30 days"
 insights> compare active_users revenue "last month"
+insights> help
 ```
 
-## Usage
+CLI reference: [01_docs/CLI_REFERENCE.md](01_docs/CLI_REFERENCE.md)
 
-### MCP Tools
+## How it works
 
-The agent exposes 9 tools via MCP:
-
-#### ask_question
-Ask questions in natural language:
-```python
-ask_question("How many users signed up last month?")
+```mermaid
+flowchart LR
+    Q["Plain-language question"] --> G["Normalize terms<br/>with the business glossary"]
+    G --> M["Match a metric<br/>in the catalog"]
+    M --> S["Build SQL from the<br/>metric's template, filter,<br/>and time period"]
+    S --> E["Execute<br/><i>(simulated today)</i>"]
+    E --> A["Answer with SQL, definition,<br/>assumptions, and follow-ups"]
+    S --> H[("History and<br/>templates")]
 ```
 
-#### generate_query
-Generate SQL for specific metrics:
-```python
-generate_query("revenue", "last 30 days", "country='US'", "date")
+1. **Normalize.** The business glossary maps everyday words to metric terms. For example, "customers" becomes "users" and "sales" becomes "revenue."
+2. **Match.** The question is matched against the metric catalog: active users, revenue, conversion rate, and signups.
+3. **Generate.** SQL comes from the metric's own template and filter, never improvised, so the same question always gets the same logic.
+4. **Explain.** Every answer carries the query, the definition, the filters it assumed, and suggested next questions.
+
+Design detail: [01_docs/ARCHITECTURE.md](01_docs/ARCHITECTURE.md)
+
+## Design principles
+
+1. **No number without its query.** Showing how a result was calculated is what makes it trustworthy.
+2. **Definitions over improvisation.** SQL comes from approved metric definitions, so two people asking the same question get the same answer.
+3. **Don't guess.** When a question doesn't match a metric, the agent says so and offers options.
+4. **Progressive disclosure.** The answer comes first, then the detail for anyone who wants to check it.
+5. **Honest about limits.** Simulated values and checks are labeled as simulated, every time.
+
+## Project layout
+
+```text
+insights_agent/   MCP server, CLI, config loader, and SQLite query history
+05_tests/         43 tests covering parsing, SQL generation, validation, and every tool
+01_docs/          API, architecture, CLI, Claude Desktop setup, data connections, demo walkthrough
+02_examples/      Python client, Claude Desktop, Jupyter, and streaming-data examples
+03_data/          Sample data for demos
+06_configs/       Example configurations
 ```
 
-#### validate_query
-Validate SQL queries:
-```python
-validate_query("SELECT COUNT(*) FROM users WHERE date >= '2025-01-01'")
-```
-
-#### explain_result
-Get context and interpretation:
-```python
-explain_result("1500", "active_users", "last 7 days")
-```
-
-#### suggest_followups
-Get follow-up question suggestions:
-```python
-suggest_followups("How many active users last week?")
-```
-
-#### save_query_template
-Save reusable query templates:
-```python
-save_query_template("Weekly Users", "SELECT COUNT(*) FROM users", "Weekly count")
-```
-
-#### list_templates
-View saved templates:
-```python
-list_templates()
-```
-
-#### check_data_quality
-Assess data quality:
-```python
-check_data_quality("revenue", "last 7 days")
-```
-
-#### compare_metrics
-Compare two metrics:
-```python
-compare_metrics("active_users", "revenue", "last month")
-```
-
-### MCP Resources
-
-Access data via resources:
-
-- `metrics://catalog` - Complete metrics catalog
-- `metrics://metric/{id}` - Specific metric definition
-- `history://recent` - Recent query history
-- `templates://list` - Saved query templates
-
-### Python API
-
-Use directly in Python code:
-
-```python
-from insights_agent.server import ask_question, generate_query
-
-# Ask a question
-result = ask_question("How many active users last week?")
-print(result)
-
-# Generate a query
-query = generate_query("revenue", "last 30 days", "country='US'")
-print(query)
-```
-
-See [02_examples/python-client](02_examples/python-client) for more examples.
-
-## Configuration
-
-### Metric Definitions
-
-Define custom metrics in `config.yaml`:
-
-```yaml
-metrics:
-  your_metric:
-    name: Your Metric Name
-    description: What this metric measures
-    sql_template: COUNT(*) or SUM(column) or other aggregation
-    table: schema.table_name
-    filter: Optional WHERE clause conditions
-    unit: users, dollars, percent, etc.
-```
-
-### Data Sources
-
-Configure data sources:
-
-```yaml
-data_sources:
-  production:
-    type: postgresql
-    host: db.example.com
-    port: 5432
-    database: analytics
-    # Use environment variables for credentials
-```
-
-### Business Glossary
-
-Map business terms:
-
-```yaml
-business_glossary:
-  customers: users
-  purchases: transactions
-  sales: revenue
-```
-
-### Query Settings
-
-Tune performance:
-
-```yaml
-query:
-  max_results: 10000
-  timeout_seconds: 30
-  enable_caching: true
-  cache_ttl_seconds: 300
-```
-
-## Examples
-
-### Claude Desktop Integration
-See [02_examples/claude-desktop](02_examples/claude-desktop)
-
-### Python Client
-See [02_examples/python-client](02_examples/python-client)
-
-### Jupyter Notebook
-See [02_examples/jupyter](02_examples/jupyter)
-
-### Complete Usage Guide
-See [02_examples/USAGE.md](02_examples/USAGE.md)
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│  Natural Language Interface             │
-├─────────────────────────────────────────┤
-│  • parse_question()                     │
-│  • generate_query()                     │
-│  • explain_result()                     │
-│  • suggest_followups()                  │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Query Translation Layer                │
-├─────────────────────────────────────────┤
-│  • Maps business terms to SQL           │
-│  • Validates against metric definitions │
-│  • Optimizes query performance          │
-│  • Checks data quality constraints      │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Semantic Metrics Repository            │
-├─────────────────────────────────────────┤
-│  • Trusted metric definitions           │
-│  • Business glossary mappings           │
-│  • Data quality metadata                │
-│  • Historical query patterns            │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Data Warehouse                         │
-├─────────────────────────────────────────┤
-│  • Snowflake, BigQuery, Redshift        │
-│  • dbt models and metrics               │
-│  • Raw and transformed tables           │
-└─────────────────────────────────────────┘
-```
-
-## Alternative Installation (using uv)
-
-```bash
-# Clone the repository
-git clone https://github.com/jkelleman/ai-assisted-insights-agent.git
-cd ai-assisted-insights-agent
-
-# Install dependencies with uv
-uv add "mcp[cli]"
-uv pip install -e .
-
-# Configure database connection
-export DATABASE_URL="your_warehouse_connection_string"
-
-# Run the agent
-uv run python -m insights_agent.server
-```
-
-### Usage Examples
-
-**Ask a simple question:**
-```python
-ask_question("How many users signed up last month?")
-
-# Returns:
-# Answer: 1,247 users
-# 
-# Query Used:
-# SELECT COUNT(DISTINCT user_id)
-# FROM analytics.signups
-# WHERE signup_date >= '2025-12-01' 
-#   AND signup_date < '2026-01-01'
-#
-# Data Quality:
-# ✓ Data is fresh (updated 2 hours ago)
-# ✓ No missing days in date range
-# ✓ Matches expected volume (within 2σ)
-```
-
-**Get explanation with context:**
-```python
-explain_query("Why did revenue drop 15% last week?")
-
-# Returns:
-# Investigating revenue drop...
-#
-# Revenue Breakdown:
-# - Previous week: $245,000
-# - Last week: $208,250 (-15%)
-#
-# Contributing Factors:
-# 1. New user signups down 22% (from 450 to 351)
-# 2. Average order value stable ($55 vs $54)
-# 3. Conversion rate unchanged (2.3%)
-#
-# Recommended Analysis:
-# • Check marketing campaign performance
-# • Review signup funnel for blockers
-# • Compare to same week last year (seasonal?)
-```
-
-**Save reproducible query:**
-```python
-save_query_template(
-    question="Weekly active users",
-    template="SELECT COUNT(DISTINCT user_id) FROM analytics.user_events WHERE event_date >= CURRENT_DATE - INTERVAL '7 days'"
-)
-
-# Query template saved. Rerun anytime with:
-# run_template("Weekly active users")
-```
-
-## Design Principles
-
-### 1. Explainability Over Black Boxes
-Never return a number without showing how it was calculated. Transparency builds trust and enables validation.
-
-### 2. Reproducibility as a Feature
-Every insight should be reproducible with the same query. Version-controlled metric definitions ensure consistency over time.
-
-### 3. Progressive Complexity
-Start with simple answers. Offer drill-down paths for users who want more detail. Don't overwhelm non-technical stakeholders.
-
-### 4. Human-in-the-Loop Validation
-Agent assists but doesn't replace analysts. Complex queries should be reviewed before execution.
-
-### 5. Governance Integration
-Respect organizational metric definitions and data access policies. Don't bypass governance for convenience.
-
-## Use Cases
-
-### Product Manager
-"I need to understand why feature adoption is lower than expected."
-
-**Agent helps:**
-- Parse "feature adoption" to the canonical metric definition
-- Generate queries for adoption rate by cohort, segment, and time period
-- Surface data quality issues (incomplete tracking, recent schema changes)
-- Suggest follow-up questions about user behavior patterns
-
-### Executive Stakeholder
-"What's our customer lifetime value this quarter?"
-
-**Agent helps:**
-- Retrieve CLV metric from semantic layer
-- Show calculation methodology and assumptions
-- Compare to previous quarters with confidence intervals
-- Provide reproducible query for quarterly reporting
-
-### Data Analyst
-"I need to validate whether our conversion funnel is working correctly."
-
-**Agent helps:**
-- Generate funnel queries with proper event sequencing
-- Check for data integrity issues (duplicate events, missing steps)
-- Compare to historical baseline for anomaly detection
-- Export validated query for dashboard integration
-
-## Technical Stack
-
-- **Python 3.10+** - Core language
-- **FastMCP** - Model Context Protocol implementation
-- **SQLAlchemy** - Database abstraction and query building
-- **SQLGlot** - SQL parsing and optimization
-- **Pydantic** - Schema validation and type safety
-- **Rich** - Terminal output formatting
-
-## MCP Tools
-
-### Core Tools
-
-| Tool | Purpose | Example |
-|------|---------|---------|
-| `ask_question()` | Translate natural language to SQL | "Active users last week?" |
-| `generate_query()` | Create SQL from structured input | Build query with parameters |
-| `explain_result()` | Add context to query results | Why this number? What assumptions? |
-| `validate_query()` | Check query before execution | Catch errors, optimize performance |
-| `suggest_followups()` | Recommend next questions | Drill-down paths based on result |
-| `save_query_template()` | Store reusable query | Create report templates |
-| `check_data_quality()` | Assess result reliability | Freshness, completeness, anomalies |
-| `compare_metrics()` | Side-by-side analysis | Period over period, segment comparison |
-
-## What This Demonstrates
-
-### UX Skills
-- **Abstraction Design** - Hiding SQL complexity while maintaining transparency
-- **Progressive Disclosure** - Layered information architecture for varied technical depth
-- **Trust Through Transparency** - Explainability as core design principle
-- **Contextual Assistance** - Anticipating follow-up needs and surfacing relevant information
-
-### Technical Skills
-- **NLP Integration** - Natural language to structured query translation
-- **SQL Generation** - Dynamic query building with optimization and validation
-- **Data Quality Engineering** - Automated freshness and completeness checks
-- **System Integration** - Connecting semantic layers, warehouses, and governance systems
-
-### Domain Expertise
-- **Analytics Workflows** - Understanding analyst pain points and bottlenecks
-- **Business Intelligence** - Translating business questions to technical implementations
-- **Data Governance** - Respecting organizational policies and metric standards
-- **Decision Support** - Designing for actionability and confidence in insights
-
-## Why This Project Matters
-
-As a **Principal Content Designer at Microsoft** working with data and AI systems, this project demonstrates:
-
-1. **Deep understanding of analytics workflows** - Direct experience with the bottleneck between business questions and data answers
-2. **UX for AI-assisted tools** - Designing transparency and explainability into LLM-powered systems
-3. **Governance-aware design** - Building systems that respect organizational standards while reducing friction
-4. **Accessibility for non-technical users** - Democratizing data access without sacrificing accuracy
-
-This represents human-centered design for AI augmentation: making analysts more efficient while empowering stakeholders with self-service insights.
-
-## Integration with Other Projects
-
-**Semantic Metrics Modeling Assistant**
-- Pulls metric definitions for consistent business logic
-- Validates queries against trusted metric repository
-- Maintains governance standards across both systems
-
-**MCP Agent Ecosystem**
-- Follows established MCP patterns from previous agents
-- Shares architectural principles and tool design patterns
-- Demonstrates range of MCP agent applications
+## Roadmap
+
+- [ ] Load metric definitions and the glossary from `config.yaml` instead of the built-in catalog
+- [ ] Run generated SQL against a real database, starting with SQLite and the bundled sample data
+- [ ] Replace simulated data-quality checks with real freshness and completeness queries
+- [ ] Parse and validate SQL with a real parser instead of pattern checks
+- [ ] Add LLM-based question parsing for phrasings the rule-based matcher misses
+
+Planned connection setup: [01_docs/CONNECTING_TO_DATA.md](01_docs/CONNECTING_TO_DATA.md)
 
 ## About
 
-**Jen Kelleman**  
-Principal Content Designer @ Microsoft
+Built by **Jen Kelleman**, a content designer for AI and data experiences. I design how AI systems explain themselves, so people can see why an answer is right before they act on it.
 
-I design AI and data experiences that reduce cognitive load and build trust through transparent, well-instrumented systems.
+- [LinkedIn](https://linkedin.com/in/jenniferkelleman) · [Portfolio](https://aiwithjen.com) · [AI Content Design Handbook](https://jkelleman.github.io/ai-content-design-handbook/)
 
-### Connect
-- [LinkedIn](https://linkedin.com/in/jenniferkelleman)
-- [Medium](https://jenkelleman.medium.com)
-- [AI Content Design Handbook](https://jkelleman.github.io/ai-content-design-handbook/)
+**Related projects**
+- [Semantic Metrics Modeling Assistant](https://github.com/jkelleman/semantic-metrics-modeling-assistant): an MCP agent for metric governance and trust
+- [Airbnb LLM-as-a-Judge Listing Evals](https://github.com/jkelleman/airbnb-llm-as-a-judge-listing-evals): calibrated virtual judges for AI listing highlights
+- [AI Content Design Handbook](https://github.com/jkelleman/ai-content-design-handbook): a guide to UX writing for AI systems
 
-### Other Projects
-- **[Semantic Metrics Modeling Assistant](https://github.com/jkelleman/semantics-metrics-modeling-assistant)** - MCP agent for metrics governance and trust
-- **[MCP-Oreilly](https://github.com/jkelleman/MCP-Oreilly)** - Three production MCP agents for content design, meeting analysis, and documentation
-- **[AI Content Design Handbook](https://github.com/jkelleman/ai-content-design-handbook)** - Comprehensive guide to UX writing for AI systems
-
----
-
-**Making data insights accessible, explainable, and trustworthy.**
-
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).

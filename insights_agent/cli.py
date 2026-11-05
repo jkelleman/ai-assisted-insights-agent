@@ -7,6 +7,7 @@ without requiring an MCP client.
 """
 import sys
 import cmd
+import shlex
 import json
 from typing import Optional
 from pathlib import Path
@@ -96,7 +97,11 @@ Type 'quit' or 'exit' to exit.
         Example: generate active_users "last 30 days"
         Example: generate revenue "this month" "country='US'" date
         """
-        parts = arg.split(maxsplit=3)
+        try:
+            parts = shlex.split(arg)  # keeps quoted values like "last 30 days" together
+        except ValueError:
+            print("❌ Check your quotes and try again.")
+            return
         if not parts:
             print("❌ Please provide a metric name.")
             print("Available metrics:", ", ".join(METRIC_DEFINITIONS.keys()))

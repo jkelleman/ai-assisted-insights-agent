@@ -11,6 +11,7 @@ Created by: Jen Kelleman
 import sys
 import json
 import re
+import zlib
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -131,16 +132,17 @@ Available metrics:
 Question: {question}
 Time Period: {time_period}
 
-Answer: {result_value:,} {metric['unit']}
+Answer: {_format_number(result_value)} {metric['unit']}
+Note: Values are simulated until a data source is connected.
 
 Query Used:
 {query_result['sql']}
 
 Explanation:
-This query counts {metric['description'].lower()} from the {metric['table']} table.
+Metric logic: {metric['description']}, from the {metric['table']} table.
 {f"Filtered by: {metric['filter']}" if metric['filter'] else "No additional filters applied."}
 
-Data Quality:
+Data Quality: (simulated checks)
 {quality}
 
 Metric Definition:
@@ -583,8 +585,8 @@ Time Period: {time_period}
 {m1['name']} vs {m2['name']}
 
 Values:
-  {m1['name']}: {value1:,} {m1['unit']}
-  {m2['name']}: {value2:,} {m2['unit']}
+  {m1['name']}: {_format_number(value1)} {m1['unit']}
+  {m2['name']}: {_format_number(value2)} {m2['unit']}
 
 Definitions:
   {m1['name']}: {m1['description']}
@@ -688,17 +690,29 @@ def _parse_time_period(time_period: str) -> str:
     return "event_date >= CURRENT_DATE - INTERVAL '7 days'"
 
 
+def _stable_hash(text: str) -> int:
+    """Hash that stays the same across runs, so simulated values are reproducible."""
+    return zlib.crc32(text.encode("utf-8"))
+
+
+def _format_number(value: float) -> str:
+    """Format a number with thousands separators, dropping a trailing .0."""
+    if float(value).is_integer():
+        return f"{int(value):,}"
+    return f"{value:,.2f}"
+
+
 def _simulate_query_execution(sql: str) -> float:
-    """Simulate query execution with realistic values."""
-    # Generate realistic values based on metric type
+    """Simulate query execution with realistic, reproducible values."""
+    h = _stable_hash(sql)
     if "COUNT" in sql.upper():
-        return float(1247 + hash(sql) % 1000)
+        return float(1247 + h % 1000)
     elif "SUM" in sql.upper():
-        return float(50000 + hash(sql) % 50000)
+        return float(50000 + h % 50000)
     elif "AVG" in sql.upper():
-        return float(25 + (hash(sql) % 100) / 10)
+        return float(25 + (h % 100) / 10)
     else:
-        return float(100 + hash(sql) % 900)
+        return float(100 + h % 900)
 
 
 def _assess_data_quality(metric: str, time_period: str) -> str:
@@ -750,7 +764,7 @@ def _find_similar_metrics(query: str) -> List[str]:
 def _get_historical_context(metric: str, value: float, time_period: str) -> Dict[str, Any]:
     """Get historical context for a metric value."""
     # Simulate historical baseline (previous period)
-    baseline = value * 0.9 + (hash(metric) % 200)
+    baseline = value * 0.9 + (_stable_hash(metric) % 200)
     
     return {
         "baseline": baseline,
