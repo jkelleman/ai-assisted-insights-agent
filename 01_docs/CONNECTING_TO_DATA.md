@@ -1,6 +1,6 @@
 # Connecting to Your Real Data
 
-> **Status:** The data-connection layer isn't wired into the server yet. Today the agent generates SQL from the metric catalog in `insights_agent/server.py` and simulates execution. This guide documents the planned setup.
+> **Note:** The agent now connects through a config file set in `INSIGHTS_CONFIG`. Supported sources are SQLite, any SQLAlchemy URL, Microsoft Fabric, Databricks, Power BI, and Adobe Analytics. For the current setup, see the [Integrations section of the README](../README.md#integrations) and `06_configs/config.integrations.example.yaml`. Some steps below were written earlier and may differ.
 
 Complete guide to connecting the AI-Assisted Insights Agent to your actual data sources.
 

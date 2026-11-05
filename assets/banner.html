@@ -35,25 +35,28 @@
   <div class="left">
     <div class="eyebrow"><i></i>MCP agent · explainable analytics</div>
     <h1>Every answer<br>shows its <span>work</span>.</h1>
-    <p class="sub">An MCP agent that turns plain-language data questions into SQL from trusted metric definitions, then explains the query, the metric, and the assumptions behind every number.</p>
+    <p class="sub">An MCP agent that turns plain-language data questions into SQL from trusted metric definitions, runs it on your warehouse, and explains the query and assumptions behind every number.</p>
     <div class="chips">
-      <div class="chip"><b>9</b> MCP tools</div>
-      <div class="chip"><b>4</b> MCP resources</div>
-      <div class="chip"><b>43</b> tests</div>
+      <div class="chip"><b>13</b> MCP tools</div>
+      <div class="chip"><b>6</b> data sources</div>
+      <div class="chip"><b>70</b> tests</div>
     </div>
   </div>
 
   <div class="card">
     <div class="q">How many active users did we have last week?</div>
-    <div class="ans"><strong>1,896 users</strong><span>simulated value</span></div>
-<pre><span class="lbl">Query used</span><span class="k">SELECT</span> COUNT(DISTINCT user_id)
+    <div class="ans"><strong>4,012 users</strong><span>demo warehouse</span></div>
+<pre><span class="lbl">Query used · generated with SQLGlot</span><span class="k">SELECT</span> COUNT(DISTINCT user_id)
 <span class="k">FROM</span> analytics.user_events
-<span class="k">WHERE</span> event_type = <span class="s">'login'</span>
-  <span class="k">AND</span> event_date &gt;= CURRENT_DATE - <span class="k">INTERVAL</span> <span class="s">'7 days'</span></pre>
+<span class="k">WHERE</span> (event_type = <span class="s">'login'</span>)
+  <span class="k">AND</span> event_date &gt;= <span class="s">'2026-10-29'</span>
+  <span class="k">AND</span> event_date &lt; <span class="s">'2026-11-05'</span></pre>
     <div class="meta">
-      <div class="m">Metric: Active Users</div>
-      <div class="m">Filter: logins only</div>
-      <div class="m">4 follow-up questions</div>
+      <div class="m">Fabric</div>
+      <div class="m">Power BI</div>
+      <div class="m">Databricks</div>
+      <div class="m">Adobe Analytics</div>
+      <div class="m">Datadog</div>
     </div>
   </div>
 </div>
