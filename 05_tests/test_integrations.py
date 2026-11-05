@@ -241,7 +241,7 @@ class TestSQL:
         period = DateRange(date(2026, 10, 29), date(2026, 11, 5))
         for dialect in ("fabric", "databricks", "snowflake", "sqlite"):
             sql = build_metric_sql(ACTIVE_USERS, period, dialect)
-            assert "COUNT(DISTINCT user_id)" in sql
+            assert "(DISTINCT user_id)" in sql   # T-SQL uses COUNT_BIG; others use COUNT
             assert "'2026-10-29'" in sql and "'2026-11-05'" in sql
 
     def test_read_only_guard(self):
@@ -250,6 +250,11 @@ class TestSQL:
         for bad in ("DELETE FROM t", "DROP TABLE t", "SELECT 1; DROP TABLE t", "INSERT INTO t SELECT 1"):
             with pytest.raises(UnsafeQueryError):
                 ensure_read_only(bad)
+
+    def test_fabric_uses_count_big(self):
+        from insights_agent.sql import build_metric_sql
+        sql = build_metric_sql(ACTIVE_USERS, DateRange(date(2026, 10, 29), date(2026, 11, 5)), "fabric")
+        assert "COUNT_BIG(DISTINCT user_id)" in sql
 
     def test_transpile_to_fabric(self):
         from insights_agent.sql import transpile
