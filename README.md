@@ -134,7 +134,7 @@ Every SQL source runs only single, read-only `SELECT` statements. SQLGlot parses
 git clone https://github.com/jkelleman/ai-assisted-insights-agent.git
 cd ai-assisted-insights-agent
 pip install -e .
-pytest            # 70 tests
+pytest            # 71 tests
 ```
 
 ### Run real queries on the demo warehouse
@@ -215,7 +215,7 @@ Design detail: [01_docs/ARCHITECTURE.md](01_docs/ARCHITECTURE.md)
 ```text
 insights_agent/   MCP server, CLI, Pydantic config, SQLGlot SQL layer, telemetry, demo warehouse
   connectors/     SQLAlchemy (SQLite, Fabric, Databricks, any URL), Power BI, Adobe Analytics
-05_tests/         70 tests covering parsing, SQL generation, every tool, and every connector
+05_tests/         71 tests covering parsing, SQL generation, every tool, and every connector
 01_docs/          API, architecture, CLI, Claude Desktop setup, data connections, demo walkthrough
 02_examples/      Python client, Claude Desktop, Jupyter, and streaming-data examples
 03_data/          Sample data for demos
