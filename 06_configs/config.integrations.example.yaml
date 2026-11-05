@@ -1,0 +1,62 @@
+# Example data sources. Use exactly one data_source block in your config.
+# Secrets come from environment variables, never from this file.
+
+# --- Microsoft Fabric (Warehouse or Lakehouse SQL analytics endpoint) ---
+# pip install 'ai-insights-agent[fabric]'   (plus the Microsoft ODBC Driver 18)
+# Signs in with DefaultAzureCredential: `az login`, managed identity, or service principal env vars.
+data_source:
+  type: fabric
+  server: xxxxxxxx.datawarehouse.fabric.microsoft.com
+  database: SalesWarehouse
+
+# --- Databricks SQL warehouse ---
+# pip install 'ai-insights-agent[databricks]'  and  export DATABRICKS_TOKEN=...
+# data_source:
+#   type: databricks
+#   server_hostname: adb-1234567890123456.7.azuredatabricks.net
+#   http_path: /sql/1.0/warehouses/abc123def456
+#   catalog: main
+#   schema: analytics
+
+# --- Power BI semantic model (DAX via executeQueries) ---
+# pip install 'ai-insights-agent[powerbi]'
+# data_source:
+#   type: powerbi
+#   workspace_id: 00000000-0000-0000-0000-000000000000
+#   dataset_id: 00000000-0000-0000-0000-000000000000
+#   date_column: "'Date'[Date]"
+# Metrics can name an existing measure:   dax_measure: Active Users
+# or be translated from their SQL automatically for simple aggregations.
+
+# --- Adobe Analytics (2.0 Reports API) ---
+# export ADOBE_CLIENT_ID=... ADOBE_CLIENT_SECRET=...   (OAuth Server-to-Server credential)
+# data_source:
+#   type: adobe_analytics
+#   global_company_id: examplecompany
+#   report_suite_id: examplersid
+# Each metric needs:   adobe_metric: metrics/visits
+
+# --- Any SQLAlchemy database (PostgreSQL, Snowflake, MySQL, ...) ---
+# data_source:
+#   type: sqlalchemy
+#   url: ${WAREHOUSE_URL}
+#   dialect: snowflake
+
+# --- Datadog query telemetry (works with any source) ---
+# export DD_API_KEY=...
+telemetry:
+  datadog:
+    enabled: true
+    site: datadoghq.com
+    service: insights-agent
+
+metrics:
+  active_users:
+    name: Active Users
+    description: Unique users who logged in at least once in the time period
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.user_events
+    filter: event_type = 'login'
+    unit: users
+    dax_measure: Active Users
+    adobe_metric: metrics/visitors

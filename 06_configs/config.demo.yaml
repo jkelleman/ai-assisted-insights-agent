@@ -1,0 +1,50 @@
+# Runs the agent against the local demo warehouse.
+# Build it first:  python -m insights_agent.demo
+# Then:            INSIGHTS_CONFIG=06_configs/config.demo.yaml python -m insights_agent.cli
+
+data_source:
+  type: sqlite
+  path: ../03_data/demo_analytics.db
+  attach:
+    analytics: ../03_data/demo_analytics.db   # so analytics.user_events resolves
+
+metrics:
+  active_users:
+    name: Active Users
+    description: Unique users who logged in at least once in the time period
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.user_events
+    filter: event_type = 'login'
+    unit: users
+  revenue:
+    name: Total Revenue
+    description: Sum of all completed transaction amounts
+    sql_template: SUM(amount)
+    table: analytics.transactions
+    filter: status = 'completed'
+    unit: dollars
+  conversion_rate:
+    name: Conversion Rate
+    description: Percentage of sessions that ended in a purchase
+    sql_template: AVG(purchased) * 100.0
+    table: analytics.user_sessions
+    unit: percent
+  signups:
+    name: New Signups
+    description: Count of new user registrations
+    sql_template: COUNT(DISTINCT user_id)
+    table: analytics.signups
+    unit: users
+
+business_glossary:
+  customers: users
+  purchases: transactions
+  sales: revenue
+  registrations: signups
+  conversions: conversion_rate
+
+telemetry:
+  datadog:
+    enabled: false        # set true and export DD_API_KEY to send query metrics to Datadog
+    site: datadoghq.com
+    service: insights-agent

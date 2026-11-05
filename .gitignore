@@ -49,3 +49,6 @@ Thumbs.db
 .env
 query_history.json
 .database_credentials
+
+# Generated demo warehouse (build with: python -m insights_agent.demo)
+03_data/demo_analytics.db

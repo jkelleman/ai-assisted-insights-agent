@@ -25,9 +25,31 @@ from insights_agent.server import (
     list_templates,
     check_data_quality,
     compare_metrics,
+    transpile_query,
+    run_query,
+    list_data_sources,
+    export_powerbi_measures,
     METRIC_DEFINITIONS,
     QUERY_HISTORY
 )
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+    from rich.text import Text
+    console = Console()
+except ImportError:  # Rich is a dependency, but keep the CLI usable without it
+    console = None
+
+
+def show(result: str, title: str = "") -> None:
+    """Print a tool result in a panel. Text() keeps brackets in SQL or DAX from being read as markup."""
+    if console is None:
+        show(result)
+        return
+    console.print(Panel(Text(result.strip("\n")), title=title or None, title_align="left",
+                        border_style="cyan", padding=(1, 2)))
 
 
 class InsightsAgentCLI(cmd.Cmd):
@@ -69,7 +91,7 @@ Type 'quit' or 'exit' to exit.
             return
         
         result = ask_question(arg, self.last_time_period)
-        print(result)
+        show(result)
         
         # Extract result value for explain command
         if "Answer:" in result:
@@ -113,7 +135,7 @@ Type 'quit' or 'exit' to exit.
         group_by = parts[3].strip('"') if len(parts) > 3 else ""
         
         result = generate_query(metric, time_period, filters, group_by)
-        print(result)
+        show(result)
     
     def do_validate(self, arg):
         """
@@ -127,7 +149,7 @@ Type 'quit' or 'exit' to exit.
             return
         
         result = validate_query(arg)
-        print(result)
+        show(result)
     
     # Analysis Commands
     
@@ -151,7 +173,7 @@ Type 'quit' or 'exit' to exit.
             time_period = parts[2].strip('"') if len(parts) > 2 else self.last_time_period
             result = explain_result(result_value, metric, time_period)
         
-        print(result)
+        show(result)
     
     def do_compare(self, arg):
         """
@@ -170,7 +192,7 @@ Type 'quit' or 'exit' to exit.
         time_period = parts[2].strip('"') if len(parts) > 2 else self.last_time_period
         
         result = compare_metrics(metric1, metric2, time_period)
-        print(result)
+        show(result)
     
     def do_quality(self, arg):
         """
@@ -188,7 +210,7 @@ Type 'quit' or 'exit' to exit.
         time_period = parts[1].strip('"') if len(parts) > 1 else self.last_time_period
         
         result = check_data_quality(metric, time_period)
-        print(result)
+        show(result)
     
     def do_followups(self, arg):
         """
@@ -202,7 +224,7 @@ Type 'quit' or 'exit' to exit.
             return
         
         result = suggest_followups(arg)
-        print(result)
+        show(result)
     
     # Template Commands
     
@@ -230,7 +252,7 @@ Type 'quit' or 'exit' to exit.
         description = parts[2] if len(parts) > 2 else ""
         
         result = save_query_template(name, sql_query, description)
-        print(result)
+        show(result)
     
     def do_templates(self, arg):
         """
@@ -239,7 +261,7 @@ Type 'quit' or 'exit' to exit.
         Usage: templates
         """
         result = list_templates()
-        print(result)
+        show(result)
     
     # Utility Commands
     
@@ -249,12 +271,57 @@ Type 'quit' or 'exit' to exit.
         
         Usage: metrics
         """
-        print("\n📊 Available Metrics:\n" + "=" * 60)
+        if console is None:
+            for metric_id, metric in METRIC_DEFINITIONS.items():
+                print(f"{metric['name']} ({metric_id}): {metric['description']} [{metric['table']}]")
+            return
+        table = Table(title="Available metrics", title_justify="left", header_style="bold cyan")
+        for col in ("ID", "Name", "Description", "Unit", "Table"):
+            table.add_column(col)
         for metric_id, metric in METRIC_DEFINITIONS.items():
-            print(f"\n{metric['name']} ({metric_id})")
-            print(f"  Description: {metric['description']}")
-            print(f"  Unit: {metric['unit']}")
-            print(f"  Table: {metric['table']}")
+            table.add_row(metric_id, metric["name"], metric["description"], metric["unit"], metric["table"])
+        console.print(table)
+
+    def do_sources(self, arg):
+        """
+        Show the connected data source and supported source types.
+
+        Usage: sources
+        """
+        show(list_data_sources(), "Data sources")
+
+    def do_transpile(self, arg):
+        """
+        Translate SQL to another dialect.
+
+        Usage: transpile <dialect> <sql>
+        Example: transpile fabric SELECT name FROM users LIMIT 5
+        """
+        parts = arg.split(maxsplit=1)
+        if len(parts) < 2:
+            print("❌ Usage: transpile <dialect> <sql>")
+            return
+        show(transpile_query(parts[1], parts[0]), "Transpile")
+
+    def do_sql(self, arg):
+        """
+        Run a read-only SQL query on the connected data source.
+
+        Usage: sql <query>
+        Example: sql SELECT COUNT(*) FROM analytics.signups
+        """
+        if not arg.strip():
+            print("❌ Usage: sql <query>")
+            return
+        show(run_query(arg), "Query results")
+
+    def do_powerbi(self, arg):
+        """
+        Export the metric catalog as Power BI DAX measures.
+
+        Usage: powerbi
+        """
+        show(export_powerbi_measures(), "Power BI measures")
     
     def do_history(self, arg):
         """
@@ -345,6 +412,8 @@ Questions & Queries:
   ask, question, q    - Ask a data question in natural language
   generate           - Generate a SQL query for a metric
   validate           - Validate a SQL query
+  sql                - Run a read-only query on the connected source
+  transpile          - Translate SQL to another dialect (fabric, databricks, ...)
   
 Analysis:
   explain            - Explain a result with context
@@ -358,6 +427,8 @@ Templates:
   
 Utilities:
   metrics            - List all available metrics
+  sources            - Show the connected data source
+  powerbi            - Export metrics as Power BI DAX measures
   history            - Show query history
   set_period         - Set default time period
   examples           - Show usage examples

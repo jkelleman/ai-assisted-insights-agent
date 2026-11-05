@@ -1,6 +1,6 @@
 [project]
 name = "ai-insights-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP agent that translates natural language questions into accurate, explainable, and reproducible data insights"
 authors = [
     {name = "Jen Kelleman"}
@@ -10,7 +10,26 @@ requires-python = ">=3.10"
 dependencies = [
     "mcp[cli]>=1.1.2,<2",  # MCP SDK 2.x renamed FastMCP; this server targets 1.x
     "pyyaml>=6.0",
+    "pydantic>=2.5",
+    "sqlglot>=25.0",
+    "sqlalchemy>=2.0",
+    "rich>=13.0",
+    "requests>=2.31",
 ]
+
+[project.optional-dependencies]
+fabric = ["pyodbc>=5.0", "azure-identity>=1.15"]
+databricks = ["databricks-sqlalchemy>=2.0"]
+powerbi = ["azure-identity>=1.15"]
+snowflake = ["snowflake-sqlalchemy>=1.5"]
+postgres = ["psycopg[binary]>=3.1"]
+all = ["ai-insights-agent[fabric,databricks,powerbi,snowflake,postgres]"]
+dev = ["pytest>=7.0.0"]
+
+[project.scripts]
+insights-agent = "insights_agent.server:main"
+insights-cli = "insights_agent.cli:main"
+insights-demo = "insights_agent.demo:main"
 
 [project.urls]
 Homepage = "https://github.com/jkelleman/ai-assisted-insights-agent"

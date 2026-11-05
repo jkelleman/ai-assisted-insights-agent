@@ -18,6 +18,9 @@ from collections import defaultdict
 
 from mcp.server.fastmcp import FastMCP
 
+from .connectors import SUPPORTED_SOURCES, ConnectorError
+from .runtime import get_runtime
+
 # Create the FastMCP server
 mcp = FastMCP("ai-insights-agent")
 
@@ -73,6 +76,14 @@ BUSINESS_GLOSSARY = {
 }
 
 
+def _runtime():
+    """The configured data source and telemetry. Merges config metrics into the catalog on first use."""
+    return get_runtime(METRIC_DEFINITIONS, BUSINESS_GLOSSARY)
+
+
+_runtime()  # apply INSIGHTS_CONFIG at startup, if set
+
+
 @mcp.tool()
 def ask_question(question: str, time_period: str = "last 7 days") -> str:
     """
@@ -110,39 +121,61 @@ Available metrics:
     if query_result["error"]:
         return f"Error generating query: {query_result['error']}"
     
-    # Simulate query execution (in production, would execute against real database)
-    result_value = _simulate_query_execution(query_result["sql"])
-    
-    # Get data quality assessment
-    quality = _assess_data_quality(parsed["metrics"][0], time_period)
-    
+    metric_id = parsed["metrics"][0]
+    metric = METRIC_DEFINITIONS[metric_id]
+    rt = _runtime()
+
+    if rt.connector:
+        # Run the metric on the configured data source
+        try:
+            executed = rt.run_metric(metric_id, metric, time_period)
+        except ConnectorError as e:
+            return f"Couldn't answer from {rt.connector.label}.\n\n{e}"
+        result_value = executed.value
+        query_text = executed.query
+        answer = (f"{_format_number(result_value)} {metric['unit']}" if result_value is not None
+                  else "No data for this period")
+        note = f"Source: {executed.source}, queried in {executed.elapsed_ms:,.0f} ms."
+        query_heading = {"sql": "Query Used:", "dax": "Query Used (DAX):"}.get(
+            executed.query_language, "Request Sent:")
+        quality = "Live freshness and completeness checks aren't connected yet for this source."
+        quality_heading = "Data Quality:"
+    else:
+        # No data source configured: simulate a value, and say so
+        result_value = _simulate_query_execution(query_result["sql"])
+        query_text = query_result["sql"]
+        answer = f"{_format_number(result_value)} {metric['unit']}"
+        note = ("Values are simulated until a data source is connected."
+                if not rt.error else f"Values are simulated because the data source isn't available: {rt.error}")
+        query_heading = "Query Used:"
+        quality = _assess_data_quality(metric_id, time_period)
+        quality_heading = "Data Quality: (simulated checks)"
+
     # Store in query history
     QUERY_HISTORY.append({
         "question": question,
         "time_period": time_period,
-        "sql": query_result["sql"],
+        "sql": query_text,
         "result": result_value,
+        "source": rt.source_label,
         "timestamp": datetime.now().isoformat()
     })
-    
-    # Format response
-    metric = METRIC_DEFINITIONS[parsed["metrics"][0]]
-    
+
     report = f"""
 Question: {question}
 Time Period: {time_period}
 
-Answer: {_format_number(result_value)} {metric['unit']}
-Note: Values are simulated until a data source is connected.
+Answer: {answer}
+Note: {note}
 
-Query Used:
-{query_result['sql']}
+{query_heading}
+{query_text}
 
 Explanation:
 Metric logic: {metric['description']}, from the {metric['table']} table.
 {f"Filtered by: {metric['filter']}" if metric['filter'] else "No additional filters applied."}
 
-Data Quality: (simulated checks)
+{quality_heading}
 {quality}
 
 Metric Definition:
@@ -306,7 +339,19 @@ def validate_query(sql_query: str) -> str:
     issues = []
     warnings = []
     recommendations = []
-    
+
+    # Parse with SQLGlot: syntax errors, write operations, and tables used
+    analysis = _analyze_sql(sql_query)
+    if analysis is not None:
+        if analysis.parse_error:
+            issues.append(f"SQL syntax error: {analysis.parse_error}")
+        elif not analysis.is_read_only:
+            issues.append("Query changes data. Only read-only SELECT queries are allowed")
+        known_tables = {m["table"] for m in METRIC_DEFINITIONS.values()}
+        unknown = [t for t in analysis.tables if t not in known_tables]
+        if unknown:
+            recommendations.append(f"Not in the metric catalog: {', '.join(unknown)}. Check these are approved sources")
+
     # Basic syntax checks
     if not sql_query.strip().upper().startswith("SELECT"):
         issues.append("Query must start with SELECT")
@@ -571,10 +616,21 @@ def compare_metrics(metric1: str, metric2: str, time_period: str = "last 7 days"
     
     m1 = METRIC_DEFINITIONS[metric1]
     m2 = METRIC_DEFINITIONS[metric2]
-    
-    # Simulate values
-    value1 = _simulate_query_execution(f"SELECT {m1['sql_template']} FROM {m1['table']}")
-    value2 = _simulate_query_execution(f"SELECT {m2['sql_template']} FROM {m2['table']}")
+    rt = _runtime()
+
+    if rt.connector:
+        try:
+            value1 = rt.run_metric(metric1, m1, time_period).value or 0.0
+            value2 = rt.run_metric(metric2, m2, time_period).value or 0.0
+        except ConnectorError as e:
+            return f"Couldn't compare metrics on {rt.connector.label}.\n\n{e}"
+        correlation = _daily_correlation(rt, metric1, m1, metric2, m2, time_period)
+        values_note = f"Source: {rt.connector.label}"
+    else:
+        value1 = _simulate_query_execution(f"SELECT {m1['sql_template']} FROM {m1['table']}")
+        value2 = _simulate_query_execution(f"SELECT {m2['sql_template']} FROM {m2['table']}")
+        correlation = "Not computed: correlation needs real daily values from a connected data source."
+        values_note = "Values are simulated until a data source is connected."
     
     report = f"""
 Metric Comparison
@@ -584,7 +640,7 @@ Time Period: {time_period}
 
 {m1['name']} vs {m2['name']}
 
-Values:
+Values ({values_note}):
   {m1['name']}: {_format_number(value1)} {m1['unit']}
   {m2['name']}: {_format_number(value2)} {m2['unit']}
 
@@ -600,13 +656,134 @@ Insights:
 {_generate_comparison_insights(metric1, metric2, value1, value2)}
 
 Correlation Analysis:
-{_analyze_correlation(metric1, metric2)}
+{correlation}
 """
     
     return report
 
 
+@mcp.tool()
+def transpile_query(sql_query: str, target_dialect: str, source_dialect: str = "postgres") -> str:
+    """
+    Translate SQL between dialects with SQLGlot, for example from PostgreSQL to
+    Microsoft Fabric (T-SQL), Databricks, Snowflake, or BigQuery.
+
+    Args:
+        sql_query: SQL to translate
+        target_dialect: e.g. "fabric", "tsql", "databricks", "snowflake", "bigquery", "sqlite"
+        source_dialect: dialect the SQL is written in (default "postgres")
+
+    Returns:
+        The translated SQL
+    """
+    from . import sql as sqltools
+    try:
+        translated = sqltools.transpile(sql_query, target_dialect, read=source_dialect)
+    except Exception as e:
+        return f"Couldn't translate the query: {e}"
+    return f"""
+Translated from {source_dialect} to {sqltools.resolve_dialect(target_dialect)}
+{'=' * 50}
+
+{translated}
+"""
+
+
+@mcp.tool()
+def run_query(sql_query: str, max_rows: int = 50) -> str:
+    """
+    Run a read-only SQL query on the configured SQL data source and return the rows.
+    Queries that change data are rejected before they reach the database.
+
+    Args:
+        sql_query: SELECT query, written in the source's own dialect
+        max_rows: maximum rows to return (default 50)
+
+    Returns:
+        The rows as a table, or why the query couldn't run
+    """
+    rt = _runtime()
+    conn = rt.connector
+    if conn is None:
+        return "No data source is configured. Set INSIGHTS_CONFIG to a config file with a data_source."
+    if not hasattr(conn, "run_sql"):
+        return f"{conn.label} isn't a SQL source. Use ask_question for this source."
+    from . import sql as sqltools
+    try:
+        rows = conn.run_sql(sql_query, max_rows=max(1, min(max_rows, 1000)))
+    except (ConnectorError, sqltools.UnsafeQueryError) as e:
+        return f"Query not run: {e}"
+    if not rows:
+        return f"The query returned no rows ({conn.label})."
+    cols = list(rows[0].keys())
+    lines = [" | ".join(cols), " | ".join("---" for _ in cols)]
+    lines += [" | ".join("" if r[c] is None else str(r[c]) for c in cols) for r in rows]
+    return f"{len(rows)} row(s) from {conn.label}\n\n" + "\n".join(lines)
+
+
+@mcp.tool()
+def list_data_sources() -> str:
+    """
+    Show the configured data source and every source type the agent supports.
+
+    Returns:
+        The active source, its status, and supported source types
+    """
+    rt = _runtime()
+    lines = ["Data Sources", "=" * 50, ""]
+    if rt.connector:
+        try:
+            status = rt.connector.health_check()
+        except Exception as e:
+            status = f"Not reachable: {e}"
+        lines += [f"Active: {rt.connector.label}", f"Status: {status}"]
+    elif rt.error:
+        lines += ["Active: none", f"Problem: {rt.error}"]
+    else:
+        lines += ["Active: none (answers are simulated)",
+                  "Set INSIGHTS_CONFIG to a config file to connect a data source."]
+    lines += ["", f"Telemetry: {'Datadog' if rt.telemetry.enabled else 'off'}", "", "Supported sources:"]
+    lines += [f"• {name}: {desc}" for name, desc in SUPPORTED_SOURCES.items()]
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def export_powerbi_measures() -> str:
+    """
+    Translate the metric catalog into DAX measures for a Power BI semantic model,
+    so dashboards use the same definitions as the agent.
+
+    Returns:
+        One DAX measure per metric, or a note for metrics too complex to translate
+    """
+    from .connectors.powerbi import dax_for_metric
+    lines = ["Power BI Measures (DAX)", "=" * 50, ""]
+    for metric_id, metric in METRIC_DEFINITIONS.items():
+        dax = dax_for_metric(metric)
+        if dax:
+            lines.append(f"{metric['name']} = {dax}")
+        else:
+            lines.append(f"-- {metric['name']}: too complex to translate automatically; define it in Power BI "
+                         f"and set dax_measure in the config")
+    return "\n".join(lines)
+
+
 # Helper functions
+
+def _analyze_sql(sql_query: str):
+    """SQLGlot analysis of a query, or None if it couldn't be analyzed."""
+    try:
+        from . import sql as sqltools
+        result = sqltools.analyze(sql_query, dialect="postgres")
+        if result.parse_error:
+            # Retry with SQLGlot's generic dialect before calling it a syntax error
+            generic = sqltools.analyze(sql_query, dialect="")
+            if not generic.parse_error:
+                return generic
+        return result
+    except ImportError:
+        return None
+
 
 def _parse_question(question: str) -> Dict[str, Any]:
     """Parse natural language question to identify metrics and intent."""
@@ -881,13 +1058,45 @@ def _generate_comparison_insights(metric1: str, metric2: str, value1: float, val
     ratio = value1 / value2 if value2 != 0 else 0
     
     return f"""• {m1_name} is {ratio:.2f}x {m2_name}
-• Both metrics are trending in the same direction
-• Consider analyzing these together for complete picture"""
+• Analyze these together to see whether they move with each other"""
 
 
-def _analyze_correlation(metric1: str, metric2: str) -> str:
-    """Analyze correlation between two metrics."""
-    return "Strong positive correlation (r=0.85) - these metrics tend to move together"
+def _daily_correlation(rt, id1: str, m1: dict, id2: str, m2: dict, time_period: str) -> str:
+    """Pearson correlation of two metrics' daily values. SQL sources only."""
+    conn = rt.connector
+    if not hasattr(conn, "build_sql"):
+        return f"Not available for {conn.label}: correlation uses daily SQL queries."
+    from .periods import period_to_range
+    period = period_to_range(time_period)
+    try:
+        series = []
+        for m in (m1, m2):
+            day = m.get("date_column") or "event_date"
+            rows = conn.run_sql(conn.build_sql(m, period, group_by=day))
+            series.append({str(r[day]): float(r["value"] or 0) for r in rows})
+    except ConnectorError as e:
+        return f"Couldn't compute correlation: {e}"
+    days = sorted(set(series[0]) & set(series[1]))
+    if len(days) < 3:
+        return "Not enough overlapping days to compute a correlation."
+    xs, ys = [series[0][d] for d in days], [series[1][d] for d in days]
+    r = _pearson(xs, ys)
+    if r is None:
+        return "Correlation undefined: one metric didn't change over the period."
+    strength = "strong" if abs(r) >= 0.7 else "moderate" if abs(r) >= 0.4 else "weak"
+    direction = "positive" if r > 0 else "negative"
+    return f"{strength.capitalize()} {direction} correlation (r = {r:.2f}) across {len(days)} days"
+
+
+def _pearson(xs, ys):
+    n = len(xs)
+    mx, my = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    vx = sum((x - mx) ** 2 for x in xs)
+    vy = sum((y - my) ** 2 for y in ys)
+    if vx == 0 or vy == 0:
+        return None
+    return cov / (vx ** 0.5 * vy ** 0.5)
 
 
 # MCP Resources
@@ -945,6 +1154,12 @@ def get_recent_queries() -> str:
         "count": len(recent),
         "queries": recent
     }, indent=2)
+
+
+@mcp.resource("datasources://current")
+def get_current_data_source() -> str:
+    """The configured data source and telemetry status."""
+    return list_data_sources()
 
 
 @mcp.resource("templates://list")
